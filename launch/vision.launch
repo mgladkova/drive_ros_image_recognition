@@ -1,0 +1,42 @@
+<launch>
+    <arg name="camera" default="camera"/>
+    <arg name="camera_image_topic" default="/$(arg camera)/image_raw"/>
+    <arg name="camera_info_topic" default="/$(arg camera)/camera_info"/>
+    <arg name="warped_image_topic" default="/$(arg camera)/warped_image"/>
+    <arg name="undistorted_image_topic" default="/$(arg camera)/undistorted_image"/>
+    <arg name="homography_topic" default="/$(arg camera)/camera_homography"/>
+    <arg name="odometry_topic" default="/visual_odom/odom"/>
+    <arg name="driving_line_topic" default="/driving_line"/>
+    <arg name="detected_intersection_topic" default="/detected_intersections"/>
+    <arg name="debug" default="false"/>
+    <arg name="use_nodelet" default="false"/>
+    <arg name="nodelet_manager" default=""/>
+    <arg name="line_detection_debug_image_topic" default="/line_detection_debug_image"/>
+    <arg name="output" default="screen"/>
+
+    <include file="$(find drive_ros_image_recognition)/launch/warp_image.launch">
+        <arg name="camera_image_topic" value="$(arg camera_image_topic)"/>
+        <arg name="camera_info_topic" value="$(arg camera_info_topic)"/>
+        <arg name="warped_image_topic" value="$(arg warped_image_topic)"/>
+        <arg name="undistort_out" value="$(arg undistorted_image_topic)"/>
+        <arg name="homography_topic" value="$(arg homography_topic)"/>
+        <arg name="debug" value="$(arg debug)"/>
+        <arg name="use_nodelet" value="$(arg use_nodelet)"/>
+        <arg name="nodelet_manager" value="$(arg nodelet_manager)"/>
+        <arg name="output" value="$(arg output)"/>
+    </include>
+
+    <include file="$(find drive_ros_image_recognition)/launch/line_detection.launch">
+        <arg name="incoming_homographied_image" value="$(arg warped_image_topic)"/>
+        <arg name="camera_info" value="$(arg camera_info_topic)"/>
+        <arg name="homography_topic" value="$(arg homography_topic)"/>
+        <arg name="odometry_topic" value="$(arg odometry_topic)"/>
+        <arg name="driving_line_topic" value="$(arg driving_line_topic)"/>
+        <arg name="detected_intersection_topic" default="$(arg detected_intersection_topic)"/>
+        <arg name="debug" value="$(arg debug)"/>
+        <arg name="use_nodelet" value="$(arg use_nodelet)"/>
+        <arg name="nodelet_manager" value="$(arg nodelet_manager)"/>
+        <arg name="line_detection_debug_image_topic" default="$(arg line_detection_debug_image_topic)"/>
+        <arg name="output" value="$(arg output)"/>
+    </include>
+</launch>

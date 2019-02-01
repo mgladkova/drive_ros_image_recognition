@@ -16,3 +16,12 @@
   </class>
 </library>
 
+<!-- road_detection nodelet -->
+<library path="lib/libroad_detection_nodelet">
+  <class name="drive_ros_image_recognition/RoadDetectionNodelet" type="drive_ros_image_recognition::RoadDetectionNodelet" base_class_type="nodelet::Nodelet">
+  <description>
+  Image warper nodelet.
+  </description>
+  </class>
+</library>
+
