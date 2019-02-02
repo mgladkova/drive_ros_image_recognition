@@ -60,7 +60,7 @@ bool LineDetection::init() {
     detectedIntersectionsPub = nh_.advertise<drive_ros_msgs::DetectedIntersection>("detected_intersection_topic", 1);
     ROS_INFO("Publish detected intersection on topic '%s'", detectedIntersectionsPub.getTopic().c_str());
 
-#ifdef PUBLISH_DEBUG
+#if PUBLISH_DEBUG
     debugImgPub_ = imageTransport_.advertise("debug_image", 3);
     ROS_INFO_STREAM("Publishing debug image on topic " << debugImgPub_.getTopic());
 #endif
@@ -89,7 +89,7 @@ void LineDetection::processIncomingImage(cv::Mat &homographedImg) {
 //    imgTimestamp = imgIn->header.stamp;
     imgTimestamp = ros::Time::now();
 
-#ifdef PUBLISH_DEBUG
+#if PUBLISH_DEBUG
     cv::cvtColor(homographedImg, debugImg_, CV_GRAY2RGB);
 #endif
 
@@ -102,7 +102,7 @@ void LineDetection::processIncomingImage(cv::Mat &homographedImg) {
         return;
     }
 
-#ifdef PUBLISH_DEBUG
+#if PUBLISH_DEBUG
     if(drawDebugLines_) {
         // Draw the Hough lines
         for(auto l : linesInImage) {
@@ -177,7 +177,7 @@ void LineDetection::processIncomingImage(cv::Mat &homographedImg) {
     	detectedIntersectionsPub.publish(intersectionMsg);
     }
 
-#ifdef PUBLISH_DEBUG
+#if PUBLISH_DEBUG
     std::function<void (Polynom&, cv::Scalar)> drawLaneMarking = [this, detectionRange](Polynom &poly, cv::Scalar color) {
       std::vector<cv::Point2f> worldPts, imgPts;
 
@@ -233,7 +233,7 @@ void LineDetection::findLaneMarkings(std::vector<Line> &lines) {
     std::vector<Line*> allLeftMarkings, allMidMarkings, allRightMarkings;
     std::vector<cv::RotatedRect> regions;
 
-    ROS_INFO("=============== New image ===============");
+    //ROS_INFO("=============== New image ===============");
 
     for(int i = 0; i < lines.size(); i++) {
     	unusedLines.push_back(&(lines.at(i)));
@@ -256,7 +256,7 @@ void LineDetection::findLaneMarkings(std::vector<Line> &lines) {
     	verticalMarkings.clear();
     	otherMarkings.clear();
 
-    	ROS_INFO("--- Segment #%u ---", i+1);
+        //ROS_INFO("--- Segment #%u ---", i+1);
 
     	// If we did not find a segment at the previous position use one from the road model
     	if(useRoadModelSegment) {
@@ -306,9 +306,9 @@ void LineDetection::findLaneMarkings(std::vector<Line> &lines) {
         float probRightDashed = isDashedLine(rightMarkings);
         if((probMidDashed < probLeftDashed) || (probMidDashed < probRightDashed)) {
         	if(probMidDashed < 0.5f) {
-        		ROS_WARN("  mid line is not dashed: %.2f", isDashedLine(midMarkings));
+                        //ROS_WARN("  mid line is not dashed: %.2f", isDashedLine(midMarkings));
         		if(probRightDashed > 0.7f) {
-        			ROS_INFO("  right line is probably the middle line: %.2f", isDashedLine(rightMarkings));
+                                //ROS_INFO("  right line is probably the middle line: %.2f", isDashedLine(rightMarkings));
 
         			cv::Vec2f shiftVec(	sin(segAngle) * laneWidthWorld_,
         					cos(segAngle) * laneWidthWorld_ * -1.f);
@@ -319,7 +319,7 @@ void LineDetection::findLaneMarkings(std::vector<Line> &lines) {
         			segStartWorld.y += shiftVec(1);
         			continue;
         		} else if(probLeftDashed > 0.7f) {
-        			ROS_INFO("  left line is probably the middle line: %.2f", isDashedLine(leftMarkings));
+                                //ROS_INFO("  left line is probably the middle line: %.2f", isDashedLine(leftMarkings));
 
         			cv::Vec2f shiftVec(	sin(segAngle) * laneWidthWorld_,
         					cos(segAngle) * laneWidthWorld_);
@@ -330,7 +330,7 @@ void LineDetection::findLaneMarkings(std::vector<Line> &lines) {
         			segStartWorld.y += shiftVec(1);
         			continue;
         		} else {
-        			ROS_INFO("!!! Maybe there are markings on the street?");
+                                //ROS_INFO("!!! Maybe there are markings on the street?");
         		}
         	}
         }
@@ -357,7 +357,7 @@ void LineDetection::findLaneMarkings(std::vector<Line> &lines) {
         	allMidMarkings.insert(allMidMarkings.end(), midMarkings.begin(), midMarkings.end());
         	allRightMarkings.insert(allRightMarkings.end(), rightMarkings.begin(), rightMarkings.end());
         } else {
-        	ROS_INFO("  segment does not fit with previous");
+                //ROS_INFO("  segment does not fit with previous");
         	useRoadModelSegment = true;
         	roadModel.decreaseSegmentTtl(i);
 
@@ -406,12 +406,13 @@ void LineDetection::findLaneMarkings(std::vector<Line> &lines) {
 
     if (worldPts.size() > 0)
         image_operator_.worldToWarpedImg(worldPts, imgPts);
-    else
-        ROS_WARN("[Line Detection] No segment points found in image!");
-
+    //else
+        //ROS_WARN("[Line Detection] No segment points found in image!");
+#if PUBLISH_DEBUG
     for(int i = 0; i < imgPts.size(); i++) {
         cv::circle(debugImg_, imgPts.at(i), 5, colors.at(i), 3);
     }
+#endif
 }
 
 ///
@@ -482,7 +483,7 @@ std::vector<cv::RotatedRect> LineDetection::buildRegions(
     intersectionRegions.push_back(cv::RotatedRect(imgPts.at(1), innerIntersectionRegionSize, (-angle * 180.f / M_PI)));
     intersectionRegions.push_back(cv::RotatedRect(imgPts.at(3), innerRegionSize, (-angle * 180.f / M_PI)));
 
-#ifdef PUBLISH_DEBUG
+#if PUBLISH_DEBUG
     if(drawDebugLines_) {
     	for(int i = 0; i < 3; i++) {
     		auto r = regions.at(i);
@@ -664,7 +665,7 @@ Segment LineDetection::findLaneWithRansac(std::vector<Line*> &leftMarkings,
     image_operator_.worldToWarpedImg(worldPts, imgPts);
 
     if(numLines == 0) {
-        ROS_WARN("  no lines for Ransac");
+        //ROS_WARN("  no lines for Ransac");
         return Segment(segStartWorld, imgPts.at(0), 0.f, prevAngle, segmentLength_, 0.f);
     }
 
@@ -995,7 +996,7 @@ bool LineDetection::findIntersection(std::vector<cv::RotatedRect> *regions, floa
 	middleExists = midMarkings.size() > 1;
 	rightExists = rightMarkings.size() > 1;
 
-	ROS_INFO("  Left: %lu  Mid: %lu  Right: %lu", leftMarkings.size(), midMarkings.size(), rightMarkings.size());
+        //ROS_INFO("  Left: %lu  Mid: %lu  Right: %lu", leftMarkings.size(), midMarkings.size(), rightMarkings.size());
 
 	// if there think there is an intersection, we calculate the distance to it
 	if(middleExists) {
@@ -1014,17 +1015,17 @@ bool LineDetection::findIntersection(std::vector<cv::RotatedRect> *regions, floa
 	}
 
 	if(middleExists && (leftExists || rightExists)) {
-		ROS_INFO("  INTERSECTION found - stop in %.2f[m]", distanceToIntersection);
+                //ROS_INFO("  INTERSECTION found - stop in %.2f[m]", distanceToIntersection);
 		foundIntersection = true;
 		stopLineFound = true;
 	}
 	if(!middleExists && leftExists && rightExists) {
 		distanceToIntersection = segStartWorld.x;
-		ROS_INFO("  INTERSECTION found - do not stop in %.2f[m]", distanceToIntersection);
+                //ROS_INFO("  INTERSECTION found - do not stop in %.2f[m]", distanceToIntersection);
 		foundIntersection = true;
 	}
 	if(middleExists && !leftExists && !rightExists) {
-		ROS_INFO("  START LINE found");
+                //ROS_INFO("  START LINE found");
 	}
 
 	return foundIntersection;
@@ -1060,7 +1061,7 @@ void LineDetection::findLinesWithHough(cv::Mat &img, std::vector<Line> &houghLin
     }
 
     if (imagePoints.size() == 0) {
-        ROS_WARN_STREAM("No hough lines found in image");
+        //ROS_WARN_STREAM("No hough lines found in image");
         return;
     }
     image_operator_.warpedImgToWorld(imagePoints, worldPoints);
@@ -1079,7 +1080,7 @@ float LineDetection::pointToLineDistance(Line &l, const cv::Point2f &p) {
     // http://paulbourke.net/geometry/pointlineplane/
 
     if(getDistanceBetweenPoints(l.wP1_, l.wP2_) == 0) {
-        ROS_WARN("Line with length 0");
+        //ROS_WARN("Line with length 0");
         return std::numeric_limits<float>::max();
     }
 

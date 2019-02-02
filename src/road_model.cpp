@@ -54,7 +54,7 @@ bool transformRearAxisToOdom(
 		tf::Stamped<tf::Point> &odomPt)
 {
 	try {
-		pTfListener->transformPoint("/odom", rearAxisPt, odomPt);
+                pTfListener->transformPoint("/odom", rearAxisPt, odomPt);
 	} catch (tf::TransformException &ex){
 		ROS_ERROR("transformRearAxisToOdom: %s",ex.what());
 		return false;
@@ -100,12 +100,12 @@ void RoadModel::getSegmentPositions(std::vector<cv::Point2f> &positions, std::ve
 				odomPts.push_back(s.odomEnd);
 			} else {
 				if(odomPts.empty()) {
-					ROS_WARN("not using first segment");
+                                        //ROS_WARN("not using first segment");
 				}
 				break;
 			}
 		} else {
-			ROS_WARN("odom pts not set");
+                        //ROS_WARN("odom pts not set");
 		}
 	}
 
@@ -121,7 +121,7 @@ void RoadModel::getSegmentPositions(std::vector<cv::Point2f> &positions, std::ve
 		cv::Point2f endPt  (rearAxisPts.at(i+1).x(), rearAxisPts.at(i+1).y());
 
 		if(startPt.x < 0.f) {
-//			ROS_INFO("  remove first point");
+//			//ROS_INFO("  remove first point");
 		} else {
 			positions.push_back(startPt);
 			angles.push_back(atan2(endPt.y - startPt.y, endPt.x - startPt.x));
@@ -199,7 +199,7 @@ void RoadModel::updateSegmentAtIndex(Segment &seg, int index) {
 	} else if(index == segmentsToDl.size()) {
 		segmentsToDl.push_back(seg);
 	} else {
-		ROS_WARN("  index too high");
+                //ROS_WARN("  index too high");
 	}
 }
 
@@ -208,28 +208,28 @@ bool RoadModel::segmentFitsToPrevious(Segment *segmentToAdd, int index, bool &po
     possibleIntersection = false;
 
 	if((!isFirstSegment) && (index > segmentsToDl.size())) {
-		ROS_INFO("  index > segmentsToDl.size()");
+                //ROS_INFO("  index > segmentsToDl.size()");
 		return false;
 	}
 
 	Segment *previousSegment = (isFirstSegment ? nullptr : &(segmentsToDl.at(index - 1)));
 
 	if(segmentToAdd->probablity < 0.2f) {
-		ROS_INFO("  segments probability is too low");
+                //ROS_INFO("  segments probability is too low");
 		return false;
 	}
 
 	if(segmentToAdd->length < 0.05f) {
-		ROS_INFO("  segment length < 0.05");
+                //ROS_INFO("  segment length < 0.05");
 		return false;
 	}
 
 	if(!isFirstSegment) {
 		float angleVar = M_PI / 7.0f; // TODO move to config
 		if(std::abs(previousSegment->angleTotal - segmentToAdd->angleTotal) > angleVar) {
-			ROS_INFO_STREAM("  too much angle difference: " << (segmentToAdd->angleDiff * 180.f / M_PI) << "[deg]");
+                        //ROS_INFO_STREAM("  too much angle difference: " << (segmentToAdd->angleDiff * 180.f / M_PI) << "[deg]");
 			if(std::abs(previousSegment->angleTotal - segmentToAdd->angleTotal) > (80.f / 180.f * M_PI)) {
-				ROS_INFO("  Maybe found an INTERSECTION?");
+                                //ROS_INFO("  Maybe found an INTERSECTION?");
 				possibleIntersection = true;
 			}
 			return false;
@@ -237,7 +237,7 @@ bool RoadModel::segmentFitsToPrevious(Segment *segmentToAdd, int index, bool &po
 	} else {
 		// The first segment should points into the cars driving direction
 		if(std::abs(segmentToAdd->angleTotal) > M_PI / 4.0f) {
-			ROS_WARN("  first segments angle is too big: %.1f[deg]", segmentToAdd->angleTotal * 180.f / M_PI);
+                        //ROS_WARN("  first segments angle is too big: %.1f[deg]", segmentToAdd->angleTotal * 180.f / M_PI);
 			return false;
 		}
 	}
@@ -297,7 +297,7 @@ bool RoadModel::getLaneMarkings(Polynom &line, bool leftLine) {
         break;
       }
     } else {
-      ROS_WARN("odom pts not set");
+      //ROS_WARN("odom pts not set");
     }
   }
 
@@ -361,7 +361,7 @@ float RoadModel::getDrivingLine(Polynom &drivingLine) {
 				break;
 			}
 		} else {
-			ROS_WARN("odom pts not set");
+                        //ROS_WARN("odom pts not set");
 		}
 	}
 
@@ -509,7 +509,7 @@ bool RoadModel::getIntersections(std::vector<tf::Stamped<tf::Point>> &positions,
 				auto yDist = i->odomPosition.y() - j->odomPosition.y();
 				auto dist = sqrtf(xDist*xDist + yDist*yDist);
 				if(dist < .3f) {
-					ROS_INFO("  fuse two intersection positions");
+                                        //ROS_INFO("  fuse two intersection positions");
 					i->confidence = i->confidence + .3f;
 					j->confidence = -1.f;
 				}

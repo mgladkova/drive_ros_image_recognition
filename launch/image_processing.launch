@@ -1,5 +1,8 @@
 <launch>
-    <arg name="img_in" default="/warped_image"/>
+    <arg name="img_in" default="/camera/image_raw"/>
+    <arg name="homographied_img_in" default="/warped_image"/>
+    <arg name="camera_info" default="/camera/camera_info"/>
+    <arg name="homography_in" default="/camera/camera_homography"/>
     <arg name="use_nodelet" default="false"/>
     <arg name="nodelet_manager" default=""/>
 
@@ -9,7 +12,10 @@
 
     <group unless="$(arg use_nodelet)">
         <node name="image_processing_node" pkg="drive_ros_image_recognition" type="$(arg node_type)" respawn="false" output="screen">
-            <remap from="~/img_in" to="$(arg img_in)"/>
+            <remap from="img_in" to="$(arg img_in)"/>
+            <remap from="camera_info" to="$(arg camera_info)"/>
+            <remap from="homographied_img_in" to="$(arg homographied_img_in)"/>
+            <remap from="homography_in" to="$(arg homography_in)"/>
         </node>
     </group>
 
@@ -17,15 +23,20 @@
         <group unless="$(arg run_python)">
             <arg if="$(eval arg('nodelet_manager') == '')" name="manager_used" value="image_processing_nodelet_manager"/>
             <arg unless="$(eval arg('nodelet_manager') == '')" name="manager_used" value="$(arg nodelet_manager)"/>
-
             <node if="$(eval arg('nodelet_manager') == '')" pkg="nodelet" type="nodelet" name="image_processing_nodelet_manager"  args="manager" output="screen"/>
             <node pkg="nodelet" type="nodelet" name="image_processing_nodelet" args="load drive_ros_image_recognition/ImageProcessingNodelet $(arg manager_used)" output="screen">
-                <remap from="~/img_in" to="$(arg img_in)"/>
+                <remap from="img_in" to="$(arg img_in)"/>
+                <remap from="camera_info" to="$(arg camera_info)"/>
+                <remap from="homographied_img_in" to="$(arg homographied_img_in)"/>
+                <remap from="homography_in" to="$(arg homography_in)"/>
             </node>
         </group>
         <group if="$(arg run_python)">
             <node name="image_processing_node" pkg="drive_ros_image_recognition" type="$(arg node_type)" respawn="false" output="screen">
-                <remap from="~/img_in" to="$(arg img_in)"/>
+                <remap from="img_in" to="$(arg img_in)"/>
+                <remap from="camera_info" to="$(arg camera_info)"/>
+                <remap from="homographied_img_in" to="$(arg homographied_img_in)"/>
+                <remap from="homography_in" to="$(arg homography_in)"/>
             </node>
         </group>
     </group>

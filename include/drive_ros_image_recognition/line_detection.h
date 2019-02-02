@@ -18,7 +18,6 @@
 #include "road_model.h"
 
 namespace drive_ros_image_recognition {
-
 class LineDetection {
 private:
   // our node handles
@@ -46,7 +45,7 @@ private:
   int imgHeight_;
   int imgWidth_;
   ros::Time imgTimestamp;
-#ifdef PUBLISH_DEBUG
+#if PUBLISH_DEBUG
   cv::Mat debugImg_;
 #endif
 
@@ -58,7 +57,7 @@ private:
   ros::Subscriber odometrySub;
   ros::Publisher drivingLinePub;
   ros::Publisher detectedIntersectionsPub;
-#ifdef PUBLISH_DEBUG
+#if PUBLISH_DEBUG
   image_transport::Publisher debugImgPub_;
 #endif
 
@@ -115,7 +114,7 @@ private:
   float distanceBetweenLines(Line &a, Line &b);
   float pointToLineDistance(Line &l, const cv::Point2f &p);
 
-#ifdef PUBLISH_DEBUG
+#if PUBLISH_DEBUG
   void drawDebugLines(std::vector<Line> &lines);
 #endif
 

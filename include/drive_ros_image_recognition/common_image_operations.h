@@ -191,7 +191,7 @@ public:
     ROS_ASSERT(world_size.size() == 2);
     std::vector<double> image_size;
     if(!pnh.getParam("image_size", image_size)) {
-      ROS_ERROR("Unable to load parameter world_size!");
+      ROS_ERROR("Unable to load parameter image_size!");
       return false;
     }
     ROS_ASSERT(image_size.size() == 2);

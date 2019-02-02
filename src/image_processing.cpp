@@ -6,14 +6,27 @@
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
+#include <drive_ros_image_recognition/polynom.hpp>
 
 
 namespace drive_ros_image_recognition {
 
-ImageProcessing::ImageProcessing(ros::NodeHandle nh, ros::NodeHandle pnh, bool nodelet) : nodelet_(nodelet)
-{
-  image_transport::ImageTransport it(pnh);
-  img_sub_ = it.subscribe("img_in", 1, &ImageProcessing::imageCallback, this);
+ImageProcessing::ImageProcessing(ros::NodeHandle nh, ros::NodeHandle pnh, bool nodelet) : nh_(nh), pnh_(pnh),
+                                                                                          image_operator_(), imageTransport_(nh), nodelet_(nodelet)
+{}
+
+bool ImageProcessing::init(){
+    img_sub_ = imageTransport_.subscribe("img_in", 1, &ImageProcessing::imageCallback, this);
+    lane_sub_ = pnh_.subscribe("/driving_line", 1, &ImageProcessing::laneCallback, this);
+    homImg_sub_ = imageTransport_.subscribe("homographied_img_in", 3,
+                                                             &ImageProcessing::homograpImageCallback, this);
+
+    if(!image_operator_.init()) {
+        ROS_WARN_STREAM("Failed to init image_operator");
+        return false;
+    }
+
+    return true;
 }
 
 bool ImageProcessing::detectLaneLines(cv::Mat image, cv::Vec4i& l1, cv::Vec4i& l2){
@@ -331,7 +344,7 @@ void ImageProcessing::imageCallback(const sensor_msgs::ImageConstPtr &msg)
         cv::goodFeaturesToTrack(img_in, corners, maxCorners, 0.01, 10, mask, 3);
 
         if (detectStartLine(img_out, corners, l1, l2)){
-            std::cout << "Start line is found!" << std::endl;
+            ROS_INFO("Start line is found!");
         }
         cv::cvtColor(img_out, img_out, CV_GRAY2BGR);
         for (unsigned int i = 0; i < corners.size(); i++){
@@ -343,6 +356,69 @@ void ImageProcessing::imageCallback(const sensor_msgs::ImageConstPtr &msg)
     cv::imshow("Incoming image", img_in);
     cv::waitKey(1);
   }
+}
+
+
+void ImageProcessing::homograpImageCallback(const sensor_msgs::ImageConstPtr &msg){
+    cv_bridge::CvImagePtr cv_ptr;
+    try
+    {
+      cv_ptr = cv_bridge::toCvCopy(msg);
+    }
+    catch (cv_bridge::Exception& e)
+    {
+      ROS_ERROR_STREAM_NAMED("ImageProcessing", "cv_bridge exception: "<<e.what());
+      return;
+    }
+
+    cv::Mat homImg_in = cv_ptr->image;
+    cv::imshow("Homography", homImg_in);
+    cv::waitKey(1);
+}
+
+void ImageProcessing::laneCallback(const drive_ros_msgs::DrivingLinePtr &msg){
+    if (msg->left_line_found && msg->right_line_found){
+        ROS_INFO("BOTH LINES ARE FOUND, PROCEED WITH STARTLINE DETECTION");
+        uint8_t l_order = msg->left_poly_order;
+        uint8_t r_order = msg->right_poly_order;
+        std::vector<float> l_params = msg->left_poly_params;
+        std::vector<float> r_params = msg->right_poly_params;
+        float detection_range = msg->detectionRange;
+
+        ROS_INFO("Detection range: %f, Left line polynom order: %d, Right line polynom order: %d", detection_range, l_order, r_order);
+        ROS_INFO("LEFT PARAMS");
+        for (unsigned int i = 0; i < l_params.size(); i++){
+            ROS_INFO("%f ", l_params[i]);
+        }
+        ROS_INFO("RIGHT PARAMS");
+        for (unsigned int i = 0; i < r_params.size(); i++){
+            ROS_INFO("%f ", r_params[i]);
+        }
+
+        std::vector<cv::Point2f> worldPts, imgPts;
+        Polynom l_poly = Polynom(l_params);
+        Polynom r_poly = Polynom(r_params);
+
+        for(float x = 0.3f; x < detection_range; x += .2f) {
+            worldPts.push_back(cv::Point2f(x, l_poly.atX(x)));
+        }
+        worldPts.push_back(cv::Point2f(detection_range, l_poly.atX(detection_range)));
+
+        //image_operator_.worldToWarpedImg(worldPts, imgPts);
+        image_operator_.worldToImage(worldPts, imgPts);
+        ROS_INFO("%d %d", worldPts.size(), imgPts.size());
+        cv::Mat debugImg_ = cv::Mat(700, 700, CV_8UC1, cv::Scalar::all(0));
+        cv::Scalar color(0,0,255);
+        for(int i = 1; i < imgPts.size(); i++) {
+            ROS_INFO("%f %f",imgPts[i].x,imgPts[i].y);
+            cv::line(debugImg_, imgPts.at(i-1), imgPts.at(i), color, 2, cv::LINE_AA);
+        }
+
+        cv::imshow("DEBUG", debugImg_);
+        cv::waitKey(1);
+    }
+
+
 }
 
 void ImageProcessingNodelet::onInit()

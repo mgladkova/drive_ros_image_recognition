@@ -7,6 +7,13 @@ int main(int argc, char** argv)
   ros::NodeHandle nh;
 
   drive_ros_image_recognition::ImageProcessing img_proc(nh, pnh);
+
+  if (!img_proc.init()) {
+    return 1;
+  }
+  else {
+    ROS_INFO("Image processing node succesfully initialized");
+  }
 #ifndef NDEBUG
   // give GDB time to attach
   ros::Duration(2.0).sleep();
